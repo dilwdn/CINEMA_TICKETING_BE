@@ -1,10 +1,12 @@
 const express = require('express')
 const bodyParser = require('body-parser')
+const cors = require('cors');
 
 const client = require('./connection')
 const app = express()
 
 app.use(bodyParser.json())
+app.use(cors());
 
 app.listen(3100, ()=> {
     console.log('Server running in port 3100')
@@ -16,6 +18,14 @@ client.connect(err => {
     } else {
         console.log('Connected')
     }
+})
+
+app.get('/allmovies', (req, res) => {
+    client.query('Select * from film', (err, result) => {
+        if(!err){
+            res.send(result)
+        }
+    })
 })
 
 app.get('/bioskop', (req, res) => {
@@ -57,6 +67,28 @@ app.get('/kursi-berdasarkan-id-jadwal', (req, res) => {
         }
     })
 })
+
+app.get('/sesipemutaranbyid', (req, res) => {
+    const ss_id_film = req.query.ss_id_film;
+    console.log("masuk sini");
+  
+    const query = `
+      SELECT *
+      FROM sesi_pemutaran
+      JOIN jadwal ON sesi_pemutaran.ss_id_jadwal = jadwal.j_id_jadwal
+      WHERE ss_id_film = $1
+    `;
+    const values = [ss_id_film];
+  
+    client.query(query, values, (err, result) => {
+      if (!err) {
+        res.send(result.rows);
+      } else {
+        console.error(err);
+        res.status(500).send('Error retrieving sesi_pemutaran by ss_id_film');
+      }
+    });
+  });
 
 app.get('/transaksi-berdasarkan-id-customer', (req, res) => {
     client.query("SELECT t_id_customer, t_id_transaksi, t_waktu, t_total_harga, t_status, t_metode_pembayaran FROM transaksi ORDER BY t_id_customer", (err, result) => {

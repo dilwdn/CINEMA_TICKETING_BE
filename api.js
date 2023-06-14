@@ -1,10 +1,12 @@
 const express = require('express')
 const bodyParser = require('body-parser')
+const cors = require('cors');
 
 const client = require('./connection')
 const app = express()
 
 app.use(bodyParser.json())
+app.use(cors());
 
 app.listen(3100, ()=> {
     console.log('Server running in port 3100')
@@ -16,6 +18,22 @@ client.connect(err => {
     } else {
         console.log('Connected')
     }
+})
+
+app.get('/allmovies', (req, res) => {
+    client.query('Select * from film', (err, result) => {
+        if(!err){
+            res.send(result)
+        }
+    })
+})
+
+app.get('/allsesipemutaran', (req, res) => {
+    client.query('Select * from sesi_pemutaran', (err, result) => {
+        if(!err){
+            res.send(result)
+        }
+    })
 })
 
 app.get('/bioskop', (req, res) => {
@@ -51,25 +69,111 @@ app.get('/Film-jadwalnya-kapan-dimana-aja', (req, res) => {
 })
 
 app.get('/kursi-berdasarkan-id-jadwal', (req, res) => {
-    client.query("SELECT j.j_id_jadwal, j.j_waktu, k.k_id_kursi, k.k_nama, k.k_status FROM kursi k JOIN sesi_pemutaran sp ON k.k_id_sesi_pemutaran = sp.ss_id_sesi_pemutaran JOIN jadwal j ON sp.ss_id_jadwal = j.j_id_jadwal WHERE j.j_id_jadwal = ss_id_jadwal", (err, result) => {
+    const k_id_sesi_pemutaran = req.query.k_id_sesi_pemutaran;
+
+    const query = `
+        SELECT *
+        FROM kursi
+        WHERE k_id_sesi_pemutaran = $1
+    `;
+    const values = [k_id_sesi_pemutaran];
+    client.query(query, values, (err, result) => {
         if(!err){
-            res.send(result)
+            res.send(result.rows)
+        } else {
+            console.error(err);
+            res.status(500).send('Error retrieving kursi by k_id_sesi_pemutaran');
         }
-    })
+    });
 })
 
-app.get('/transaksi-berdasarkan-id-customer', (req, res) => {
-    client.query("SELECT t_id_customer, t_id_transaksi, t_waktu, t_total_harga, t_status, t_metode_pembayaran FROM transaksi ORDER BY t_id_customer", (err, result) => {
+app.get('/jadwalbyid', (req, res) => {
+    const j_id_jadwal = req.query.j_id_jadwal;
+
+    const query = `
+        SELECT *
+        FROM jadwal
+        WHERE j_id_jadwal = $1
+    `;
+    const values = [j_id_jadwal];
+    client.query(query, values, (err, result) => {
         if(!err){
-            res.send(result)
+            res.send(result.rows)
+        } else {
+            console.error(err);
+            res.status(500).send('Error retrieving kursi by k_id_sesi_pemutaran');
         }
-    })
+    });
+})
+
+app.get('/sesipemutaranbyid', (req, res) => {
+    const ss_id_film = req.query.ss_id_film;
+  
+    const query = `
+      SELECT *
+      FROM sesi_pemutaran
+      JOIN jadwal ON sesi_pemutaran.ss_id_jadwal = jadwal.j_id_jadwal
+      WHERE ss_id_film = $1
+    `;
+    const values = [ss_id_film];
+  
+    client.query(query, values, (err, result) => {
+      if (!err) {
+        res.send(result.rows);
+      } else {
+        console.error(err);
+        res.status(500).send('Error retrieving sesi_pemutaran by ss_id_film');
+      }
+    });
+  });
+
+app.get('/signin', (req, res) => {
+    console.log(req.query);
+const c_nama = req.query.c_nama;
+const c_email = req.query.c_email;
+
+const query = `
+    SELECT *
+    FROM customer
+    WHERE c_nama = $1 
+    AND c_email = $2
+`;
+const values = [c_nama, c_email];
+
+client.query(query, values, (err, result) => {
+    if (!err) {
+        res.send(result.rows);
+    } else {
+        console.error(err);
+        res.status(500).send('Error retrieving sesi_pemutaran by ss_id_film');
+    }
+});
+});
+
+app.get('/transaksi-berdasarkan-id-customer', (req, res) => {
+    const t_id_customer = req.query.t_id_customer;
+
+    const query = `
+        SELECT *
+        FROM transaksi
+        WHERE t_id_customer = $1
+    `;
+    const values = [t_id_customer];
+    client.query(query, values, (err, result) => {
+        if(!err){
+            res.send(result.rows)
+        } else {
+            console.error(err);
+            res.status(500).send('Error retrieving kursi by k_id_sesi_pemutaran');
+        }
+    });
 })
 
 app.post('/pendaftaran-user-baru', (req, res) => {
-    const {c_nama, c_jenis_kelamin, c_nomor_telpon, c_alamat, c_email} = req.body
+    console.log(req.body);
+    const {c_nama, c_jenis_kelamin, c_nomor_telepon, c_alamat, c_email} = req.body;
 
-    client.query(`insert into customer(c_nama, c_jenis_kelamin, c_nomor_telpon, c_alamat, c_email) values('${c_nama}', '${c_jenis_kelamin}', '${c_nomor_telpon}', '${c_alamat}', '${c_email}')`), (err, result) => {
+    client.query(`insert into customer(c_nama, c_jenis_kelamin, c_nomor_telepon, c_alamat, c_email) values('${c_nama}', '${c_jenis_kelamin}', '${c_nomor_telepon}', '${c_alamat}', '${c_email}')`), (err, result) => {
         if(!err){
             res.send('Insert Success')
         } else{
@@ -79,9 +183,10 @@ app.post('/pendaftaran-user-baru', (req, res) => {
 })
 
 app.post('/transaksi-baru', (req, res) => {
+    console.log(req.body);
     const {t_waktu, t_total_harga, t_status, t_metode_pembayaran, t_id_customer} = req.body
 
-    client.query(`insert into transaksi(t_waktu, t_total_harga, t_status, t_metode_pembayaran, ) values('${t_waktu}', '${t_total_harga}', '${t_status}', '${t_metode_pembayaran}', '${t_id_customer}')`), (err, result) => {
+    client.query(`insert into transaksi(t_waktu, t_total_harga, t_status, t_metode_pembayaran, t_id_customer ) values('${t_waktu}', '${t_total_harga}', '${t_status}', '${t_metode_pembayaran}', '${t_id_customer}')`), (err, result) => {
         if(!err){
             res.send('Insert Success')
         } else{

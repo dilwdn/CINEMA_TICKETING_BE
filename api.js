@@ -135,8 +135,8 @@ app.get('/carifilm', (req, res) => {
     const query = `
     SELECT *
     FROM film
-    WHERE f_judul LIKE $1`;
-    const values = [f_judul];
+    WHERE f_judul ILIKE $1`;
+    const values = [`%${f_judul}%`];
 
     client.query(query, values, (err, result) => {
         if(!err){
@@ -149,17 +149,17 @@ app.get('/carifilm', (req, res) => {
 });
 
 app.get('/detailtiket', (req, res) => {
-    const t_id_transaksi = req.query.t_id_transaksi;
+    const c_id = req.query.c_id;
 
     const query = `
-    SELECT film.f_judul, jadwal.j_waktu, studio.s_nama
-    FROM transaksi
-    JOIN sesi_pemutaran ON sesi_pemutaran.ss_id_transaksi = transaksi.t_id_transaksi
+    SELECT *
+    FROM customer JOIN transaksi ON customer.c_id = transaksi.t_id_customer
+    JOIN sesi_pemutaran ON sesi_pemutaran.ss_id_sesi_pemutaran = transaksi.t_id_sesi_pemutaran
     JOIN jadwal ON jadwal.j_id_jadwal = sesi_pemutaran.ss_id_jadwal
     JOIN film ON film.f_id_film = sesi_pemutaran.ss_id_film
     JOIN studio ON studio.s_id_studio = sesi_pemutaran.ss_id_studio
-    WHERE transaksi.t_id_transaksi = $1`;
-    const values = [t_id_transaksi];
+    WHERE customer.c_id = $1`;
+    const values = [c_id];
 
     client.query(query, values, (err, result) => {
         if(!err){
@@ -227,9 +227,9 @@ app.post('/pendaftaran-user-baru', (req, res) => {
 })
 
 app.post('/transaksi-baru', (req, res) => {
-    const { t_waktu, t_total_harga, t_status, t_metode_pembayaran, t_id_customer } = req.body;
+    const { t_waktu, t_total_harga, t_status, t_metode_pembayaran, t_id_customer, t_id_sesi_pemutaran } = req.body;
 
-    client.query(`INSERT INTO transaksi(t_waktu, t_total_harga, t_status, t_metode_pembayaran, t_id_customer) VALUES('${t_waktu}', '${t_total_harga}', '${t_status}', '${t_metode_pembayaran}', '${t_id_customer}') RETURNING t_id_transaksi`, (err, result) => {
+    client.query(`INSERT INTO transaksi(t_waktu, t_total_harga, t_status, t_metode_pembayaran, t_id_customer, t_id_sesi_pemutaran) VALUES('${t_waktu}', '${t_total_harga}', '${t_status}', '${t_metode_pembayaran}', '${t_id_customer}', '${t_id_sesi_pemutaran}') RETURNING t_id_transaksi`, (err, result) => {
         if (!err) {
             const insertedRow = result.rows[0];
             res.send({ success: true, insertedRow });
@@ -285,12 +285,15 @@ app.put('/update-status-kursi/:id', (req, res) => {
 })
 
 app.put('/updatekursi/:id', (req, res) => {
-    const {t_id_transaksi} = req.body
-    client.query((`update kursi set k_id_transaksi = '${t_id_transaksi}'`), (err, result) => {
-        if(!err){
-            res.send('Update Success')
-        } else {
-            res.send(err.message)
-        }
-    })
-})
+    const { t_id_transaksi } = req.body;
+    client.query(
+        `UPDATE kursi SET k_id_transaksi = '${t_id_transaksi}', k_status = 'Terisi' WHERE k_id_kursi = ${req.params.id}`,
+        (err, result) => {
+            if (!err) {
+                res.send('Update Success');
+            } else {
+                res.send(err.message);
+            }
+        }
+    );
+});

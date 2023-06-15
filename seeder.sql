@@ -5,7 +5,7 @@ CREATE TYPE rating AS ENUM ('G','PG','PG-13','R', 'NC-13');
 CREATE TYPE status_tayang AS ENUM ('Segera Tayang','Sedang Tayang','Selesai Tayang');
 CREATE TYPE status_kursi AS ENUM ('Kosong','Terisi');
 CREATE TYPE status_pembayaran AS ENUM ('Menunggu Pembayaran','Berhasil');
-CREATE TYPE metode_pembayran AS ENUM ('Transfer Bank','Ovo','Gopay', 'Dana');
+CREATE TYPE metode_pembayaran AS ENUM ('Transfer Bank','Ovo','Gopay', 'Dana');
 
 -- configure sequence
 CREATE SEQUENCE IF NOT EXISTS id_sequence
@@ -66,7 +66,6 @@ CREATE TABLE jadwal (
 -- sesi pemutaran
 CREATE TABLE sesi_pemutaran (
     ss_id_sesi_pemutaran INT NOT NULL,
-    ss_id_transaksi INT NOT NULL,
     ss_id_jadwal INT NOT NULL,
     ss_id_studio INT NOT NULL,
     ss_id_film INT NOT NULL
@@ -78,7 +77,7 @@ CREATE TABLE kursi (
     k_nama VARCHAR(5),
     k_status status_kursi NOT NULL,
     k_id_sesi_pemutaran INT NOT NULL,
-    k_id_transaksi INT NOT NULL
+    k_id_transaksi INT
 );
 
 -- transaksi
@@ -87,8 +86,9 @@ CREATE TABLE transaksi (
     t_waktu TIMESTAMP NOT NULL,
     t_total_harga INT NOT NULL,
     t_status status_pembayaran NOT NULL,
-    t_metode_pembayaran metode_pembayran NOT NULL,
-    t_id_customer INT NOT NULL
+    t_metode_pembayaran metode_pembayaran NOT NULL,
+    t_id_customer INT NOT NULL,
+	t_id_sesi_pemutaran INT NOT NULL
 );
 
 -- primary keys
@@ -103,12 +103,12 @@ ALTER TABLE transaksi ADD PRIMARY KEY (t_id_transaksi);
 
 -- foreign keys
 ALTER TABLE studio ADD FOREIGN KEY (s_id_bioskop) REFERENCES bioskop(b_id_bioskop);
-ALTER TABLE sesi_pemutaran ADD FOREIGN KEY (ss_id_transaksi) REFERENCES transaksi(t_id_transaksi);
 ALTER TABLE sesi_pemutaran ADD FOREIGN KEY (ss_id_jadwal) REFERENCES jadwal(j_id_jadwal);
 ALTER TABLE sesi_pemutaran ADD FOREIGN KEY (ss_id_studio) REFERENCES studio(s_id_studio);
 ALTER TABLE sesi_pemutaran ADD FOREIGN KEY (ss_id_film) REFERENCES film(f_id_film);
 ALTER TABLE kursi ADD FOREIGN KEY (k_id_sesi_pemutaran) REFERENCES sesi_pemutaran(ss_id_sesi_pemutaran);
 ALTER TABLE kursi ADD FOREIGN KEY (k_id_transaksi) REFERENCES transaksi(t_id_transaksi);
+ALTER TABLE transaksi ADD FOREIGN KEY (t_id_sesi_pemutaran) REFERENCES sesi_pemutaran(ss_id_sesi_pemutaran);
 ALTER TABLE transaksi ADD FOREIGN KEY (t_id_customer) REFERENCES customer(c_id);
 
 INSERT INTO customer (c_nama, c_jenis_kelamin, c_nomor_telepon, c_alamat, c_email)
@@ -204,180 +204,162 @@ VALUES
     (34, '2023-06-24 15:15:00', 40000),
     (35, '2023-06-24 18:00:00', 40000),
     (36, '2023-06-24 20:45:00', 40000);
-	
-INSERT INTO transaksi (t_id_transaksi, t_waktu, t_total_harga, t_status, t_metode_pembayaran, t_id_customer)
-VALUES
-    (1, '2023-05-18 11:00:00', 75000, 'Berhasil', 'Transfer Bank', 1),
-    (2, '2023-05-18 14:30:00', 25000, 'Berhasil', 'Ovo', 5),
-    (3, '2023-05-18 16:45:00', 25000, 'Berhasil', 'Transfer Bank', 1),
-    (4, '2023-05-19 11:30:00', 35000, 'Berhasil', 'Dana', 1),
-	(5, '2023-05-19 11:33:00', 210000, 'Berhasil', 'Transfer Bank', 4),
-    (6, '2023-05-19 13:15:00', 70000, 'Berhasil', 'Ovo', 2),
-    (7, '2023-05-19 18:25:00', 140000, 'Berhasil', 'Transfer Bank', 5),
-    (8, '2023-05-20 11:00:00', 80000, 'Berhasil', 'Dana', 2),
-	(9, '2023-05-20 12:00:00', 160000, 'Berhasil', 'Dana', 3),
-	(10, '2023-05-20 19:11:00', 40000, 'Berhasil', 'Dana', 5),
-	(11, '2023-06-08 13:22:00', 125000, 'Berhasil', 'Ovo', 1),
-	(12, '2023-06-08 13:22:00', 50000, 'Berhasil', 'Transfer Bank', 4),
-	(13, '2023-06-08 12:20:00', 50000, 'Menunggu Pembayaran', 'Gopay', 5),
-	(14, '2023-06-08 19:00:00', 25000, 'Menunggu Pembayaran', 'Ovo', 1),
-	(15, '2023-06-09 11:10:00', 35000, 'Berhasil', 'Ovo', 2),
-	(16, '2023-06-09 13:15:00', 245000, 'Berhasil', 'Dana', 3),
-	(17, '2023-06-10 11:25:00', 200000, 'Menunggu Pembayaran', 'Ovo', 1),
-	(18, '2023-06-10 11:25:00', 40000, 'Berhasil', 'Ovo', 2),
-	(19, '2023-06-10 14:15:00', 80000, 'Berhasil', 'Gopay', 3),
-	(20, '2023-06-10 14:16:00', 40000, 'Menunggu Pembayaran', 'Ovo', 4),
-	(21, '2023-06-10 16:30:00', 200000, 'Berhasil', 'Ovo', 2),
-	(22, '2023-06-10 14:15:00', 240000, 'Berhasil', 'Ovo', 5),
-	(23, '2023-06-19 14:25:00', 25000, 'Menunggu Pembayaran', 'Gopay', 5),
-	(24, '2023-06-19 17:00:00', 150000, 'Berhasil', 'Gopay', 4),
-	(25, '2023-06-19 17:04:00', 25000, 'Berhasil', 'Gopay', 5),
-	(26, '2023-06-19 18:45:00', 100000, 'Menunggu Pembayaran', 'Dana', 1),
-	(27, '2023-06-20 14:15:00', 630000, 'Berhasil', 'Transfer Bank', 2),
-	(28, '2023-06-20 11:30:00', 320000, 'Berhasil', 'Gopay', 4),
-	(29, '2023-06-20 14:00:00', 120000, 'Berhasil', 'Gopay', 3),
-	(30, '2023-06-20 14:09:00', 160000, 'Berhasil', 'Transfer Bank', 5);
-	
-INSERT INTO sesi_pemutaran (ss_id_sesi_pemutaran, ss_id_transaksi, ss_id_jadwal, ss_id_studio, ss_id_film)
-VALUES
-    (1, 1, 1, 1, 7),
-    (2, 2, 3, 13, 10),
-    (3, 3, 4, 2, 9),
-    (4, 4, 5, 2, 10),
-    (5, 5, 5, 11, 7),
-    (6, 6, 6, 4, 7),
-    (7, 7, 8, 13, 9),
-    (8, 8, 9, 6, 10),
-    (9, 9, 11, 8, 8),
-    (10, 10, 12, 20, 8),
-    (11, 11, 14, 1, 2),
-    (12, 12, 14, 18, 3),
-    (13, 13, 14, 21, 4),
-    (14, 14, 16, 2, 2),
-    (15, 15, 17, 6, 3),
-    (16, 16, 18, 7, 3),
-    (17, 17, 21, 2, 3),
-    (18, 18, 21, 4, 2),
-    (19, 19, 22, 7, 4),
-    (20, 20, 22, 19, 2),
-	(21, 21, 23, 6, 3),
-    (22, 22, 22, 13, 4),
-    (23, 23, 26, 13, 1),
-    (24, 24, 27, 18, 5),
-    (25, 25, 27, 14, 6),
-    (26, 26, 28, 1, 1),
-    (27, 27, 30, 4, 1),
-    (28, 28, 33, 17, 5),
-    (29, 29, 34, 9, 6),
-    (30, 30, 34, 13, 5);
 
+INSERT INTO sesi_pemutaran (ss_id_sesi_pemutaran, ss_id_jadwal, ss_id_studio, ss_id_film)
+VALUES
+    (1, 1, 1, 1),
+    (3, 3, 4, 2),
+    (4, 4, 5, 2),
+    (6, 6, 6, 4),
+    (8, 8, 9, 6),
+    (9, 9, 11, 8),
+    (11, 11, 14, 1),
+    (14, 14, 16, 2),
+    (15, 15, 17, 6),
+    (16, 16, 18, 7),
+    (17, 17, 21, 2),
+    (18, 18, 21, 4),
+    (19, 19, 2, 7),
+	(21, 21, 2, 6),
+    (26, 26, 8, 1),
+    (27, 27, 3, 4),
+    (29, 29, 3, 9);
+
+INSERT INTO transaksi (t_id_transaksi, t_waktu, t_total_harga, t_status, t_metode_pembayaran, t_id_customer, t_id_sesi_pemutaran)
+VALUES
+    (1, '2023-05-18 11:00:00', 75000, 'Berhasil', 'Transfer Bank', 1, 1),
+    (2, '2023-05-18 14:30:00', 25000, 'Berhasil', 'Ovo', 5, 1),
+    (3, '2023-05-18 16:45:00', 25000, 'Berhasil', 'Transfer Bank', 1, 1),
+    (4, '2023-05-19 11:30:00', 35000, 'Berhasil', 'Dana', 1, 1),
+	(5, '2023-05-19 11:33:00', 210000, 'Berhasil', 'Transfer Bank', 4, 1);
+	
 INSERT INTO kursi (k_id_kursi, k_nama, k_status, k_id_sesi_pemutaran, k_id_transaksi) 
 VALUES 
-	(1, 'A1', 'Terisi', 1, 1),
-	(2, 'A2', 'Terisi', 1, 1),
-	(3, 'A3', 'Terisi', 1, 1),
-	(4, 'C1', 'Terisi', 2, 2),
-	(5, 'D1', 'Terisi', 3, 3),
-	(6, 'A1', 'Terisi', 4, 4),
-	(7, 'A1', 'Terisi', 5, 5),
-	(8, 'A2', 'Terisi', 5, 5),
-	(9, 'A3', 'Terisi', 5, 5),
-	(10, 'A4', 'Terisi', 5, 5),
-	(11, 'A5', 'Terisi', 5, 5),
-	(12, 'A6', 'Terisi', 5, 5),
-	(13, 'B1', 'Terisi', 6, 6),
-	(14, 'B2', 'Terisi', 6, 6),
-	(15, 'A1', 'Terisi', 7, 7),
-	(16, 'A2', 'Terisi', 7, 7),
-	(17, 'A3', 'Terisi', 7, 7),
-	(18, 'A4', 'Terisi', 7, 7),
-	(19, 'D1', 'Terisi', 8, 8),
-	(20, 'D2', 'Terisi', 8, 8),
-	(21, 'B1', 'Terisi', 9, 9),
-	(22, 'B2', 'Terisi', 9, 9),
-	(23, 'B3', 'Terisi', 9, 9),
-	(24, 'B4', 'Terisi', 9, 9),
-	(25, 'A1', 'Terisi', 10, 10),
-	(26, 'A1', 'Terisi', 11, 11),
-	(27, 'A2', 'Terisi', 11, 11),
-	(28, 'A3', 'Terisi', 11, 11),
-	(29, 'A4', 'Terisi', 11, 11),
-	(30, 'A5', 'Terisi', 11, 11),
-	(31, 'A1', 'Terisi', 12, 12),
-	(32, 'A2', 'Terisi', 12, 12),
-	(33, 'B1', 'Kosong', 13, 13),
-	(34, 'B2', 'Kosong', 13, 13),
-	(35, 'A1', 'Kosong', 14, 14),
-	(36, 'A1', 'Terisi', 15, 15),
-	(37, 'C1', 'Terisi', 16, 16),
-	(38, 'C2', 'Terisi', 16, 16),
-	(39, 'C3', 'Terisi', 16, 16),
-	(40, 'C4', 'Terisi', 16, 16),
-	(41, 'C5', 'Terisi', 16, 16),
-	(42, 'C6', 'Terisi', 16, 16),
-	(43, 'C7', 'Terisi', 16, 16),
-	(44, 'A1', 'Kosong', 17, 17),
-	(45, 'A2', 'Kosong', 17, 17),
-	(46, 'A3', 'Kosong', 17, 17),
-	(47, 'A4', 'Kosong', 17, 17),
-	(48, 'A5', 'Kosong', 17, 17),
-	(49, 'C1', 'Terisi', 18, 18),
-	(50, 'A1', 'Terisi', 19, 19),
-	(51, 'A2', 'Terisi', 19, 19),
-	(52, 'B1', 'Kosong', 20, 20),
-	(53, 'D1', 'Terisi', 21, 21),
-	(54, 'D2', 'Terisi', 21, 21),
-	(55, 'D3', 'Terisi', 21, 21),
-	(56, 'D4', 'Terisi', 21, 21),
-	(57, 'D5', 'Terisi', 21, 21),
-	(58, 'C1', 'Terisi', 22, 22),
-	(59, 'C2', 'Terisi', 22, 22),
-	(60, 'C3', 'Terisi', 22, 22),
-	(61, 'C4', 'Terisi', 22, 22),
-	(62, 'C5', 'Terisi', 22, 22),
-	(63, 'C6', 'Terisi', 22, 22),
-	(64, 'A1', 'Kosong', 23, 23),
-	(65, 'A1', 'Terisi', 24, 24),
-	(66, 'A2', 'Terisi', 24, 24),
-	(67, 'A3', 'Terisi', 24, 24),
-	(68, 'A4', 'Terisi', 24, 24),
-	(69, 'A5', 'Terisi', 24, 24),
-	(70, 'A6', 'Terisi', 24, 24),
-	(71, 'A1', 'Terisi', 25, 25),
-	(72, 'B1', 'Kosong', 26, 26),
-	(73, 'B2', 'Kosong', 26, 26),
-	(74, 'B3', 'Kosong', 26, 26),
-	(75, 'B4', 'Kosong', 26, 26),
-	(76, 'A1', 'Terisi', 27, 27),
-	(77, 'A2', 'Terisi', 27, 27),
-	(78, 'A3', 'Terisi', 27, 27),
-	(79, 'A4', 'Terisi', 27, 27),
-	(80, 'A5', 'Terisi', 27, 27),
-	(81, 'A6', 'Terisi', 27, 27),
-	(82, 'A7', 'Terisi', 27, 27),
-	(83, 'A8', 'Terisi', 27, 27),
-	(84, 'A9', 'Terisi', 27, 27),
-	(85, 'A10', 'Terisi', 27, 27),
-	(86, 'A11', 'Terisi', 27, 27),
-	(87, 'A12', 'Terisi', 27, 27),
-	(88, 'A13', 'Terisi', 27, 27),
-	(89, 'A14', 'Terisi', 27, 27),
-	(90, 'A15', 'Terisi', 27, 27),
-	(91, 'A16', 'Terisi', 27, 27),
-	(92, 'A17', 'Terisi', 27, 27),
-	(93, 'A18', 'Terisi', 27, 27),
-	(94, 'B1', 'Terisi', 28, 28),
-	(95, 'B2', 'Terisi', 28, 28),
-	(96, 'B3', 'Terisi', 28, 28),
-	(97, 'B4', 'Terisi', 28, 28),
-	(98, 'B5', 'Terisi', 28, 28),
-	(99, 'B6', 'Terisi', 28, 28),
-	(100, 'B7', 'Terisi', 28, 28),
-	(101, 'B8', 'Terisi', 28, 28),
-	(102, 'A1', 'Terisi', 29, 29),
-	(103, 'A2', 'Terisi', 29, 29),
-	(104, 'A3', 'Terisi', 29, 29),
-	(105, 'C1', 'Terisi', 30, 30),
-	(106, 'C2', 'Terisi', 30, 30),
-	(107, 'C3', 'Terisi', 30, 30),
-	(108, 'C4', 'Terisi', 30, 30);
+	(1, 'A1', 'Kosong', 1, null),
+	(2, 'A2', 'Kosong', 1, null),
+	(3, 'A3', 'Kosong', 1, null),
+	(5, 'D1', 'Kosong', 3, null),
+	(6, 'A1', 'Kosong', 4, null),
+	(7, 'A1', 'Kosong', 6, null),
+	(8, 'A2', 'Kosong', 6, null),
+	(9, 'A3', 'Kosong', 6, null),
+	(10, 'A4', 'Kosong', 6, null),
+	(11, 'A5', 'Kosong', 6, null),
+	(12, 'A6', 'Kosong', 6, null),
+	(13, 'B1', 'Kosong', 6, null),
+	(14, 'B2', 'Kosong', 6, null),
+	(15, 'A1', 'Kosong', 8, null),
+	(16, 'A2', 'Kosong', 8, null),
+	(17, 'A3', 'Kosong', 8, null),
+	(18, 'A4', 'Kosong', 8, null),
+	(19, 'D1', 'Kosong', 8, null),
+	(20, 'D2', 'Kosong', 8, null),
+	(21, 'B1', 'Kosong', 9, null),
+	(22, 'B2', 'Kosong', 9, null),
+	(23, 'B3', 'Kosong', 9, null),
+	(24, 'B4', 'Kosong', 9, null),
+	(25, 'A1', 'Kosong', 11, null),
+	(26, 'A1', 'Kosong', 11, null),
+	(27, 'A2', 'Kosong', 11, null),
+	(28, 'A3', 'Terisi', 11, null),
+	(29, 'A4', 'Terisi', 11, null),
+	(30, 'A5', 'Terisi', 11, null),
+	(31, 'A1', 'Terisi', 11, null),
+	(32, 'A2', 'Terisi', 11, null),
+	(33, 'B1', 'Kosong', 11, null),
+	(34, 'B2', 'Kosong', 11, null),
+	(35, 'A1', 'Kosong', 14, null),
+	(36, 'A1', 'Terisi', 15, null),
+	(37, 'C1', 'Terisi', 16, null),
+	(38, 'C2', 'Terisi', 16, null),
+	(39, 'C3', 'Terisi', 16, null),
+	(40, 'C4', 'Terisi', 16, null),
+	(41, 'C5', 'Terisi', 16, null),
+	(42, 'C6', 'Terisi', 16, null),
+	(43, 'C7', 'Terisi', 16, null),
+	(44, 'A1', 'Kosong', 17, null),
+	(45, 'A2', 'Kosong', 17, null),
+	(46, 'A3', 'Kosong', 17, null),
+	(47, 'A4', 'Kosong', 17, null),
+	(48, 'A5', 'Kosong', 17, null),
+	(49, 'C1', 'Terisi', 18, null),
+	(50, 'A1', 'Terisi', 19, null),
+	(51, 'A2', 'Terisi', 19, null),
+	(52, 'B1', 'Kosong', 19, null),
+	(53, 'D1', 'Terisi', 21, null),
+	(54, 'D2', 'Terisi', 21, null),
+	(55, 'D3', 'Kosong', 21, null),
+	(56, 'D4', 'Kosong', 21, null),
+	(57, 'D5', 'Kosong', 21, null),
+	(58, 'C1', 'Kosong', 21, null),
+	(59, 'C2', 'Kosong', 21, null),
+	(60, 'C3', 'Kosong', 21, null),
+	(61, 'C4', 'Kosong', 21, null),
+	(62, 'C5', 'Kosong', 21, null),
+	(63, 'C6', 'Kosong', 26, null),
+	(64, 'A1', 'Kosong', 26, null),
+	(65, 'A1', 'Kosong', 26, null),
+	(66, 'A2', 'Kosong', 26, null),
+	(67, 'A3', 'Kosong', 26, null),
+	(68, 'A4', 'Kosong', 26, null),
+	(69, 'A5', 'Kosong', 26, null),
+	(70, 'A6', 'Kosong', 26, null),
+	(71, 'A1', 'Kosong', 26, null),
+	(72, 'B1', 'Kosong', 26, null),
+	(73, 'B2', 'Kosong', 26, null),
+	(74, 'B3', 'Kosong', 26, null),
+	(75, 'B4', 'Kosong', 26, null),
+	(76, 'A1', 'Terisi', 26, null),
+	(77, 'A2', 'Terisi', 26, null),
+	(78, 'A3', 'Terisi', 26, null),
+	(79, 'A4', 'Kosong', 26, null),
+	(80, 'A5', 'Kosong', 26, null),
+	(81, 'A6', 'Kosong', 26, null),
+	(82, 'A7', 'Kosong', 26, null),
+	(83, 'A8', 'Kosong', 26, null),
+	(84, 'A9', 'Kosong', 26, null),
+	(85, 'A10', 'Kosong', 27, null),
+	(86, 'A11', 'Kosong', 27, null),
+	(87, 'A12', 'Kosong', 27, null),
+	(88, 'A13', 'Kosong', 27, null),
+	(89, 'A14', 'Kosong', 27, null),
+	(90, 'A15', 'Kosong', 27, null),
+	(91, 'A16', 'Kosong', 27, null),
+	(92, 'A17', 'Kosong', 27, null),
+	(93, 'A18', 'Kosong', 27, null),
+	(94, 'B1', 'Kosong', 29, null),
+	(95, 'B2', 'Kosong', 29, null),
+	(96, 'B3', 'Kosong', 29, null),
+	(97, 'B4', 'Kosong', 29, null),
+	(98, 'B5', 'Kosong', 29, null),
+	(99, 'B6', 'Kosong', 29, null),
+	(100, 'B7', 'Kosong', 29, null),
+	(101, 'B8', 'Kosong', 29, null),
+	(102, 'A1', 'Kosong', 29, null),
+	(103, 'A2', 'Kosong', 29, null),
+	(104, 'A3', 'Kosong', 29, null),
+	(105, 'C1', 'Kosong', 29, null),
+	(106, 'C2', 'Terisi', 29, 1),
+	(107, 'C3', 'Terisi', 29, 1),
+	(108, 'C4', 'Terisi', 29, 1);
+
+-- configure trigger
+-- Membuat index judul film
+CREATE INDEX idx_film_judul ON film (f_judul);
+
+-- Membuat trigger di tabel transaksi
+CREATE OR REPLACE FUNCTION set_transaksi_waktu()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'INSERT' THEN
+        NEW.t_waktu := NOW();
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Menambahkan trigger ke tabel transaksi
+CREATE TRIGGER set_transaksi_waktu_trigger
+BEFORE INSERT ON transaksi
+FOR EACH ROW
+EXECUTE FUNCTION set_transaksi_waktu();
